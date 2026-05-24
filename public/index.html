@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DocForge — AI Document Writer</title>
+<meta name="description" content="Generate professional resumes, contracts, invoices, cover letters and SOPs instantly with AI. Pay per document, no subscription.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0f0e0d;--ink-2:#3a3835;--ink-3:#7a7672;
+  --paper:#f7f4ef;--paper-2:#edeae3;--paper-3:#e2ddd5;
+  --gold:#b8860b;--gold-light:#d4a017;--gold-bg:#fdf6e3;--gold-border:#e8c96a;
+  --red:#c0392b;--green:#1a6b3c;--white:#fff;
+  --shadow:0 2px 12px rgba(15,14,13,.10);--shadow-lg:0 8px 40px rgba(15,14,13,.15);
+  --r:4px;--rl:8px;
+  --display:'Playfair Display',Georgia,serif;
+  --body:'DM Sans',sans-serif;
+}
+body{font-family:var(--body);background:var(--paper);color:var(--ink);min-height:100vh;line-height:1.6}
+
+/* ── Header ── */
+header{background:var(--ink);color:var(--paper);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:60px;position:sticky;top:0;z-index:100}
+.logo{font-family:var(--display);font-size:1.4rem;color:var(--paper)}
+.logo span{color:var(--gold-light)}
+.credits-pill{background:var(--gold-bg);color:var(--gold);border:1px solid var(--gold-border);border-radius:99px;padding:5px 16px;font-size:13px;font-weight:500;cursor:pointer;transition:.15s}
+.credits-pill:hover{background:var(--gold);color:var(--white)}
+
+/* ── Hero ── */
+.hero{text-align:center;padding:4rem 2rem 2.5rem;border-bottom:1px solid var(--paper-3);background:linear-gradient(180deg,#fff 0%,var(--paper) 100%)}
+.eyebrow{font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:1rem}
+.hero h1{font-family:var(--display);font-size:clamp(2rem,5vw,3.2rem);font-weight:700;line-height:1.15;margin-bottom:1rem}
+.hero p{font-size:1.05rem;color:var(--ink-3);max-width:520px;margin:0 auto 2rem}
+.price-pills{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.price-pill{background:var(--paper-2);border:1px solid var(--paper-3);border-radius:99px;padding:5px 16px;font-size:13px;color:var(--ink-2)}
+.price-pill strong{color:var(--ink)}
+
+/* ── Layout ── */
+.app{max-width:1100px;margin:0 auto;padding:2.5rem 1.5rem;display:grid;grid-template-columns:280px 1fr;gap:2rem;align-items:start}
+.sidebar{position:sticky;top:80px}
+.sidebar-label{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);font-weight:600;margin-bottom:10px;padding-left:2px}
+.sidebar-section{margin-bottom:2rem}
+
+/* ── Doc type buttons ── */
+.doc-btn{display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;background:transparent;border:1px solid transparent;border-radius:var(--rl);cursor:pointer;text-align:left;color:var(--ink-2);font-family:var(--body);font-size:14px;transition:.15s}
+.doc-btn:hover{background:var(--paper-2)}
+.doc-btn.active{background:var(--white);border-color:var(--paper-3);color:var(--ink);box-shadow:var(--shadow);font-weight:500}
+.doc-icon{width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.price-tag{margin-left:auto;font-size:11px;font-weight:600;color:var(--gold);background:var(--gold-bg);border-radius:4px;padding:2px 7px}
+
+/* ── Credit box ── */
+.credit-box{background:var(--gold-bg);border:1px solid var(--gold-border);border-radius:var(--rl);padding:14px 16px}
+.credit-box p{font-size:13px;color:var(--ink-2);margin-bottom:4px}
+.credit-box small{font-size:12px;color:var(--ink-3);display:block;margin-bottom:10px}
+.btn-buy{width:100%;padding:8px;background:var(--gold);color:var(--white);border:none;border-radius:var(--r);font-family:var(--body);font-size:13px;font-weight:500;cursor:pointer;transition:.15s}
+.btn-buy:hover{background:#9a7009}
+
+/* ── Main card ── */
+.main-card{background:var(--white);border:1px solid var(--paper-3);border-radius:var(--rl);box-shadow:var(--shadow);overflow:hidden}
+.card-head{padding:1.5rem 2rem;border-bottom:1px solid var(--paper-2);display:flex;align-items:center;gap:12px}
+.card-head-icon{width:40px;height:40px;border-radius:8px;background:var(--paper);display:flex;align-items:center;justify-content:center;font-size:20px}
+.card-head h2{font-family:var(--display);font-size:1.3rem;font-weight:700}
+.card-head p{font-size:13px;color:var(--ink-3);margin-top:2px}
+
+/* ── Form ── */
+.form-body{padding:2rem}
+.form-row{margin-bottom:1.25rem}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+label{display:block;font-size:13px;font-weight:500;color:var(--ink-2);margin-bottom:6px}
+.req{color:var(--gold);margin-left:2px}
+input,select,textarea{width:100%;padding:9px 13px;border:1px solid var(--paper-3);border-radius:var(--r);font-family:var(--body);font-size:14px;color:var(--ink);background:var(--white);transition:.15s;outline:none;appearance:none}
+input:focus,select:focus,textarea:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(184,134,11,.12)}
+textarea{resize:vertical;min-height:100px;line-height:1.6}
+
+/* ── Tone / Length ── */
+.tone-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.toggle-btn{padding:8px;border:1px solid var(--paper-3);border-radius:var(--r);background:var(--white);cursor:pointer;font-size:12px;font-family:var(--body);color:var(--ink-2);transition:.15s;text-align:center}
+.toggle-btn:hover{border-color:var(--gold);color:var(--gold)}
+.toggle-btn.active{background:var(--gold-bg);border-color:var(--gold);color:var(--gold);font-weight:500}
+.length-row{display:flex;gap:8px}
+.length-btn{flex:1;padding:8px;border:1px solid var(--paper-3);border-radius:var(--r);background:var(--white);cursor:pointer;font-size:13px;font-family:var(--body);color:var(--ink-2);transition:.15s;text-align:center}
+.length-btn.active{background:var(--ink);border-color:var(--ink);color:var(--paper);font-weight:500}
+.divider{height:1px;background:var(--paper-2);margin:1.5rem 0}
+
+/* ── Generate bar ── */
+.gen-bar{padding:1.25rem 2rem;background:var(--paper);border-top:1px solid var(--paper-2);display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.cost-info{font-size:13px;color:var(--ink-3)}
+.cost-info strong{color:var(--gold);font-size:15px}
+.btn-gen{padding:11px 28px;background:var(--ink);color:var(--paper);border:none;border-radius:var(--r);font-family:var(--body);font-size:15px;font-weight:500;cursor:pointer;transition:.15s;display:flex;align-items:center;gap:8px}
+.btn-gen:hover{background:var(--gold);transform:translateY(-1px);box-shadow:0 4px 16px rgba(184,134,11,.3)}
+.btn-gen:disabled{background:var(--paper-3);color:var(--ink-3);cursor:not-allowed;transform:none;box-shadow:none}
+
+/* ── Output ── */
+.output-panel{margin-top:2rem;background:var(--white);border:1px solid var(--paper-3);border-radius:var(--rl);box-shadow:var(--shadow);overflow:hidden;display:none}
+.output-panel.visible{display:block}
+.out-head{padding:1rem 1.5rem;border-bottom:1px solid var(--paper-2);display:flex;align-items:center;justify-content:space-between}
+.out-head h3{font-family:var(--display);font-size:1.1rem}
+.out-actions{display:flex;gap:8px}
+.btn-act{padding:6px 14px;border:1px solid var(--paper-3);border-radius:var(--r);background:var(--white);font-family:var(--body);font-size:13px;font-weight:500;cursor:pointer;color:var(--ink-2);transition:.15s}
+.btn-act:hover{border-color:var(--ink);color:var(--ink)}
+.btn-dl{background:var(--green);border-color:var(--green);color:var(--white)}
+.btn-dl:hover{background:#145e33;color:var(--white);border-color:#145e33}
+.out-body{padding:2.5rem;font-size:15px;line-height:1.9;color:var(--ink);white-space:pre-wrap;min-height:200px}
+
+/* ── Streaming cursor ── */
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.cursor{display:inline-block;width:2px;height:1em;background:var(--gold);margin-left:2px;vertical-align:middle;animation:blink .9s infinite}
+
+/* ── Modal ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(15,14,13,.55);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
+.overlay.visible{display:flex}
+.modal{background:var(--white);border-radius:var(--rl);padding:2.5rem;max-width:440px;width:90%;box-shadow:var(--shadow-lg);position:relative;animation:mIn .2s ease}
+@keyframes mIn{from{transform:scale(.95) translateY(10px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}
+.modal h2{font-family:var(--display);font-size:1.5rem;margin-bottom:.5rem}
+.modal>p{color:var(--ink-3);font-size:14px;margin-bottom:1.5rem}
+.modal-close{position:absolute;top:16px;right:16px;background:none;border:none;font-size:20px;cursor:pointer;color:var(--ink-3);line-height:1;padding:4px}
+.modal-close:hover{color:var(--ink)}
+.packs{display:flex;flex-direction:column;gap:10px;margin-bottom:1.5rem}
+.pack{border:1.5px solid var(--paper-3);border-radius:var(--rl);padding:14px 16px;cursor:pointer;transition:.15s;display:flex;align-items:center;justify-content:space-between}
+.pack:hover,.pack.sel{border-color:var(--gold);background:var(--gold-bg)}
+.pack-name{font-weight:500;font-size:15px}
+.pack-desc{font-size:12px;color:var(--ink-3);margin-top:2px}
+.pack-price{font-weight:700;font-size:18px;color:var(--gold)}
+.pack-badge{font-size:10px;background:var(--green);color:var(--white);padding:2px 8px;border-radius:99px;margin-left:8px;font-weight:600}
+.btn-pay{width:100%;padding:13px;background:var(--ink);color:var(--paper);border:none;border-radius:var(--r);font-size:15px;font-weight:500;font-family:var(--body);cursor:pointer;transition:.15s}
+.btn-pay:hover{background:var(--gold)}
+.stripe-note{text-align:center;font-size:11px;color:var(--ink-3);margin-top:12px}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:var(--paper);padding:12px 20px;border-radius:var(--rl);font-size:14px;box-shadow:var(--shadow-lg);transform:translateY(80px);opacity:0;transition:all .3s cubic-bezier(.34,1.56,.64,1);z-index:999}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.ok{background:var(--green)}
+.toast.err{background:var(--red)}
+
+/* ── Responsive ── */
+@media(max-width:768px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:static}
+  .two-col{grid-template-columns:1fr}
+  .tone-grid{grid-template-columns:repeat(2,1fr)}
+  .hero h1{font-size:1.8rem}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Doc<span>Forge</span></div>
+  <div class="credits-pill" id="creditsBadge" onclick="openModal()">✦ <span id="creditsNum">...</span> credits</div>
+</header>
+
+<section class="hero">
+  <div class="eyebrow">✦ AI-Powered Document Generation</div>
+  <h1>Professional documents,<br>written in seconds.</h1>
+  <p>Resumes, cover letters, contracts, invoices, SOPs — polished and ready to download. No subscription required.</p>
+  <div class="price-pills">
+    <span class="price-pill">📄 Resume — <strong>$3</strong></span>
+    <span class="price-pill">✉️ Cover letter — <strong>$2</strong></span>
+    <span class="price-pill">📋 Contract — <strong>$5</strong></span>
+    <span class="price-pill">🧾 Invoice — <strong>$2</strong></span>
+    <span class="price-pill">📌 SOP — <strong>$4</strong></span>
+  </div>
+</section>
+
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Document type</div>
+      <button class="doc-btn active" onclick="selectDoc(this,'resume')" data-cost="3">
+        <span class="doc-icon" style="background:#fdf6e3">📄</span><span>Resume / CV</span><span class="price-tag">$3</span>
+      </button>
+      <button class="doc-btn" onclick="selectDoc(this,'cover-letter')" data-cost="2">
+        <span class="doc-icon" style="background:#e8f4fd">✉️</span><span>Cover letter</span><span class="price-tag">$2</span>
+      </button>
+      <button class="doc-btn" onclick="selectDoc(this,'contract')" data-cost="5">
+        <span class="doc-icon" style="background:#edf8ee">📋</span><span>Contract / Agreement</span><span class="price-tag">$5</span>
+      </button>
+      <button class="doc-btn" onclick="selectDoc(this,'invoice')" data-cost="2">
+        <span class="doc-icon" style="background:#fef9e7">🧾</span><span>Invoice</span><span class="price-tag">$2</span>
+      </button>
+      <button class="doc-btn" onclick="selectDoc(this,'sop')" data-cost="4">
+        <span class="doc-icon" style="background:#fdf0f0">📌</span><span>SOP / Process doc</span><span class="price-tag">$4</span>
+      </button>
+      <button class="doc-btn" onclick="selectDoc(this,'business-letter')" data-cost="2">
+        <span class="doc-icon" style="background:#f3effe">📝</span><span>Business letter</span><span class="price-tag">$2</span>
+      </button>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Credits</div>
+      <div class="credit-box">
+        <p>You have <strong style="color:var(--gold)" id="creditsBox">...</strong> credits.</p>
+        <small>3 free credits included. Buy more below.</small>
+        <button class="btn-buy" onclick="openModal()">Buy credits →</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div>
+    <div class="main-card">
+      <div class="card-head">
+        <div class="card-head-icon" id="cardIcon">📄</div>
+        <div>
+          <h2 id="cardTitle">Resume / CV</h2>
+          <p id="cardDesc">Tell us about yourself and your experience</p>
+        </div>
+      </div>
+
+      <div class="form-body">
+        <!-- Resume -->
+        <div id="fields-resume">
+          <div class="form-row two-col">
+            <div><label>Full name <span class="req">*</span></label><input id="r-name" placeholder="Jane Smith"></div>
+            <div><label>Job title / role <span class="req">*</span></label><input id="r-title" placeholder="Senior Product Manager"></div>
+          </div>
+          <div class="form-row"><label>Work experience <span class="req">*</span></label><textarea id="r-exp" placeholder="List your jobs: Company, role, years, key achievements.&#10;&#10;e.g. Acme Corp — PM — 2021-2024. Led 3 product launches, grew revenue 40%."></textarea></div>
+          <div class="form-row"><label>Skills &amp; tools</label><input id="r-skills" placeholder="SQL, Figma, Python, stakeholder management..."></div>
+          <div class="form-row"><label>Education</label><input id="r-edu" placeholder="BSc Computer Science, UT Austin, 2018"></div>
+          <div class="form-row"><label>Target role / industry</label><input id="r-target" placeholder="Fintech PM role at a Series B startup"></div>
+        </div>
+
+        <!-- Cover letter -->
+        <div id="fields-cover-letter" style="display:none">
+          <div class="form-row two-col">
+            <div><label>Your name <span class="req">*</span></label><input id="cl-name" placeholder="Jane Smith"></div>
+            <div><label>Target company <span class="req">*</span></label><input id="cl-company" placeholder="Stripe"></div>
+          </div>
+          <div class="form-row"><label>Job title applying for <span class="req">*</span></label><input id="cl-role" placeholder="Senior Product Designer"></div>
+          <div class="form-row"><label>Your background &amp; key strengths <span class="req">*</span></label><textarea id="cl-bg" placeholder="Briefly describe your relevant experience and why you're a great fit."></textarea></div>
+          <div class="form-row"><label>Why this company?</label><input id="cl-why" placeholder="Love their approach to developer tooling..."></div>
+        </div>
+
+        <!-- Contract -->
+        <div id="fields-contract" style="display:none">
+          <div class="form-row two-col">
+            <div><label>Party 1 (you) <span class="req">*</span></label><input id="c-party1" placeholder="Jane Smith / Acme LLC"></div>
+            <div><label>Party 2 (other) <span class="req">*</span></label><input id="c-party2" placeholder="Bob Jones / XYZ Corp"></div>
+          </div>
+          <div class="form-row"><label>Contract type <span class="req">*</span></label>
+            <select id="c-type">
+              <option>Freelance services agreement</option>
+              <option>NDA (Non-disclosure agreement)</option>
+              <option>Employment agreement</option>
+              <option>Partnership agreement</option>
+              <option>Client services agreement</option>
+              <option>Consulting agreement</option>
+            </select>
+          </div>
+          <div class="form-row"><label>Key terms &amp; scope <span class="req">*</span></label><textarea id="c-terms" placeholder="Describe the work, payment, timeline, deliverables, termination..."></textarea></div>
+          <div class="form-row"><label>Jurisdiction / governing law</label><input id="c-jurisdiction" placeholder="State of Texas, United States"></div>
+        </div>
+
+        <!-- Invoice -->
+        <div id="fields-invoice" style="display:none">
+          <div class="form-row two-col">
+            <div><label>Your name / business <span class="req">*</span></label><input id="i-from" placeholder="Jane Smith Design Co."></div>
+            <div><label>Client name / business <span class="req">*</span></label><input id="i-to" placeholder="Acme Corporation"></div>
+          </div>
+          <div class="form-row"><label>Services / line items <span class="req">*</span></label><textarea id="i-items" placeholder="UI Design — 20 hrs @ $85/hr = $1,700&#10;Brand consultation — $500&#10;Rush fee — $200"></textarea></div>
+          <div class="form-row two-col">
+            <div><label>Invoice date</label><input id="i-date" placeholder="May 24, 2026"></div>
+            <div><label>Payment due</label><input id="i-due" placeholder="Net 30 / June 23, 2026"></div>
+          </div>
+          <div class="form-row"><label>Payment instructions</label><input id="i-payment" placeholder="Bank transfer to: BSB 123-456, Acct 789 or PayPal: jane@acme.com"></div>
+        </div>
+
+        <!-- SOP -->
+        <div id="fields-sop" style="display:none">
+          <div class="form-row"><label>Process name <span class="req">*</span></label><input id="s-name" placeholder="Customer onboarding process"></div>
+          <div class="form-row"><label>Department / team</label><input id="s-dept" placeholder="Customer Success / Operations"></div>
+          <div class="form-row"><label>Process description &amp; steps <span class="req">*</span></label><textarea id="s-steps" placeholder="Describe the steps in plain language. Who does what?&#10;&#10;e.g. 1. Sales closes deal → 2. CS sends welcome email → 3. Zoom call within 24hrs..."></textarea></div>
+          <div class="form-row"><label>Roles involved</label><input id="s-roles" placeholder="Account Executive, Customer Success Manager, Technical Lead"></div>
+        </div>
+
+        <!-- Business letter -->
+        <div id="fields-business-letter" style="display:none">
+          <div class="form-row two-col">
+            <div><label>Sender <span class="req">*</span></label><input id="bl-from" placeholder="Jane Smith, CEO"></div>
+            <div><label>Recipient <span class="req">*</span></label><input id="bl-to" placeholder="John Doe, Procurement Manager"></div>
+          </div>
+          <div class="form-row"><label>Subject / purpose <span class="req">*</span></label><input id="bl-subject" placeholder="Follow-up on Q2 partnership proposal"></div>
+          <div class="form-row"><label>Key points to cover <span class="req">*</span></label><textarea id="bl-points" placeholder="What should the letter say? Key points and what you want the recipient to do."></textarea></div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="form-row">
+          <label>Tone</label>
+          <div class="tone-grid">
+            <button class="toggle-btn active" onclick="setTone(this,'Professional')">Professional</button>
+            <button class="toggle-btn" onclick="setTone(this,'Confident')">Confident</button>
+            <button class="toggle-btn" onclick="setTone(this,'Formal')">Formal</button>
+            <button class="toggle-btn" onclick="setTone(this,'Friendly')">Friendly</button>
+            <button class="toggle-btn" onclick="setTone(this,'Concise')">Concise</button>
+            <button class="toggle-btn" onclick="setTone(this,'Warm')">Warm</button>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>Length</label>
+          <div class="length-row">
+            <button class="length-btn" onclick="setLen(this,'Concise (1 page)')">Concise</button>
+            <button class="length-btn active" onclick="setLen(this,'Standard (1-2 pages)')">Standard</button>
+            <button class="length-btn" onclick="setLen(this,'Detailed (2-3 pages)')">Detailed</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="gen-bar">
+        <div class="cost-info">This document costs <strong id="costDisplay">$3</strong> · 1 credit</div>
+        <button class="btn-gen" id="genBtn" onclick="generate()">✦ Generate document</button>
+      </div>
+    </div>
+
+    <!-- Output -->
+    <div class="output-panel" id="outputPanel">
+      <div class="out-head">
+        <h3 id="outTitle">Your document</h3>
+        <div class="out-actions">
+          <button class="btn-act" onclick="copyDoc()">⧉ Copy</button>
+          <button class="btn-act btn-dl" onclick="downloadDoc()">↓ Download</button>
+        </div>
+      </div>
+      <div class="out-body" id="outBody"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Payment Modal -->
+<div class="overlay" id="payOverlay">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <h2>Buy credits</h2>
+    <p>Credits never expire. Use them on any document type.</p>
+    <div class="packs">
+      <div class="pack sel" onclick="selPack(this,'starter')">
+        <div><div class="pack-name">Starter pack</div><div class="pack-desc">5 credits — good for 2-3 documents</div></div>
+        <div class="pack-price">$9</div>
+      </div>
+      <div class="pack" onclick="selPack(this,'value')">
+        <div><div class="pack-name">Value pack <span class="pack-badge">Best value</span></div><div class="pack-desc">15 credits — $1.27 per credit</div></div>
+        <div class="pack-price">$19</div>
+      </div>
+      <div class="pack" onclick="selPack(this,'pro')">
+        <div><div class="pack-name">Pro pack</div><div class="pack-desc">40 credits — under $1 per credit</div></div>
+        <div class="pack-price">$39</div>
+      </div>
+    </div>
+    <button class="btn-pay" id="payBtn" onclick="checkout()">Pay $9 via Stripe →</button>
+    <div class="stripe-note">🔒 Secure payment via Stripe. No subscription.</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let sessionId = localStorage.getItem('docforge_session') || null;
+let credits = 0;
+let currentDoc = 'resume';
+let currentTone = 'Professional';
+let currentLen = 'Standard (1-2 pages)';
+let currentPack = 'starter';
+let generatedText = '';
+
+const packPrices = { starter: '$9', value: '$19', pro: '$39' };
+
+const docCfg = {
+  'resume':          { title:'Resume / CV',              desc:"Tell us about yourself and your experience",        icon:'📄', cost:'$3' },
+  'cover-letter':    { title:'Cover letter',             desc:"For the role you're applying to",                  icon:'✉️', cost:'$2' },
+  'contract':        { title:'Contract / Agreement',     desc:"Legally structured service or business agreement", icon:'📋', cost:'$5' },
+  'invoice':         { title:'Invoice',                  desc:"Professional billing document",                    icon:'🧾', cost:'$2' },
+  'sop':             { title:'Standard Operating Procedure', desc:"Step-by-step process documentation",           icon:'📌', cost:'$4' },
+  'business-letter': { title:'Business letter',          desc:"Formal professional correspondence",               icon:'📝', cost:'$2' },
+};
+
+// ── Session init ───────────────────────────────────────────────────────────
+async function initSession() {
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    if (sessionId) headers['x-session-id'] = sessionId;
+    const res = await fetch('/api/session', { headers });
+    const data = await res.json();
+    sessionId = data.sessionId;
+    credits = data.credits;
+    localStorage.setItem('docforge_session', sessionId);
+    updateCreditsUI();
+  } catch (e) {
+    console.error('Session init failed:', e);
+  }
+}
+
+// Check for successful payment return
+const params = new URLSearchParams(window.location.search);
+if (params.get('payment') === 'success') {
+  const newCredits = parseInt(params.get('credits') || '0');
+  toast(`✓ Payment successful! ${newCredits} credits added.`, 'ok');
+  window.history.replaceState({}, '', '/');
+  // Re-init session to get updated credits
+  setTimeout(initSession, 500);
+} else {
+  initSession();
+}
+
+// ── UI helpers ─────────────────────────────────────────────────────────────
+function updateCreditsUI() {
+  document.getElementById('creditsNum').textContent = credits;
+  document.getElementById('creditsBox').textContent = credits;
+}
+
+function selectDoc(btn, type) {
+  document.querySelectorAll('.doc-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentDoc = type;
+  document.querySelectorAll('[id^="fields-"]').forEach(f => f.style.display = 'none');
+  document.getElementById('fields-' + type).style.display = '';
+  const c = docCfg[type];
+  document.getElementById('cardTitle').textContent = c.title;
+  document.getElementById('cardDesc').textContent = c.desc;
+  document.getElementById('cardIcon').textContent = c.icon;
+  document.getElementById('costDisplay').textContent = c.cost;
+  document.getElementById('outputPanel').classList.remove('visible');
+}
+
+function setTone(btn, t) {
+  document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentTone = t;
+}
+
+function setLen(btn, l) {
+  document.querySelectorAll('.length-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentLen = l;
+}
+
+function v(id) {
+  const el = document.getElementById(id);
+  if (!el) return '';
+  return el.tagName === 'SELECT' ? el.options[el.selectedIndex].text : el.value.trim();
+}
+
+function getFields() {
+  const f = {};
+  if (currentDoc === 'resume') {
+    f['Full Name'] = v('r-name'); f['Current Role'] = v('r-title');
+    f['Work Experience'] = v('r-exp'); f['Skills & Tools'] = v('r-skills');
+    f['Education'] = v('r-edu'); f['Target Role'] = v('r-target');
+  } else if (currentDoc === 'cover-letter') {
+    f['Applicant Name'] = v('cl-name'); f['Target Company'] = v('cl-company');
+    f['Role Applying For'] = v('cl-role'); f['Background'] = v('cl-bg');
+    f['Why This Company'] = v('cl-why');
+  } else if (currentDoc === 'contract') {
+    f['Party 1'] = v('c-party1'); f['Party 2'] = v('c-party2');
+    f['Contract Type'] = v('c-type'); f['Key Terms'] = v('c-terms');
+    f['Jurisdiction'] = v('c-jurisdiction');
+  } else if (currentDoc === 'invoice') {
+    f['From'] = v('i-from'); f['To'] = v('i-to');
+    f['Line Items'] = v('i-items'); f['Invoice Date'] = v('i-date');
+    f['Payment Due'] = v('i-due'); f['Payment Instructions'] = v('i-payment');
+  } else if (currentDoc === 'sop') {
+    f['Process Name'] = v('s-name'); f['Department'] = v('s-dept');
+    f['Steps & Description'] = v('s-steps'); f['Roles Involved'] = v('s-roles');
+  } else if (currentDoc === 'business-letter') {
+    f['From'] = v('bl-from'); f['To'] = v('bl-to');
+    f['Subject'] = v('bl-subject'); f['Key Points'] = v('bl-points');
+  }
+  return f;
+}
+
+function getRequiredField() {
+  const map = { 'resume':'r-name','cover-letter':'cl-name','contract':'c-party1','invoice':'i-from','sop':'s-name','business-letter':'bl-from' };
+  return v(map[currentDoc]);
+}
+
+// ── Generate ───────────────────────────────────────────────────────────────
+async function generate() {
+  if (!getRequiredField()) { toast('Please fill in the required fields.', 'err'); return; }
+  if (credits <= 0) { openModal(); return; }
+
+  const btn = document.getElementById('genBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Generating...';
+
+  const panel = document.getElementById('outputPanel');
+  const body = document.getElementById('outBody');
+  panel.classList.add('visible');
+  body.innerHTML = '<span style="color:var(--ink-3);font-style:italic">Drafting your document</span><span class="cursor"></span>';
+  generatedText = '';
+
+  try {
+    const res = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-session-id': sessionId },
+      body: JSON.stringify({
+        sessionId,
+        docType: currentDoc,
+        fields: getFields(),
+        tone: currentTone,
+        length: currentLen,
+      }),
+    });
+
+    if (res.status === 402) {
+      toast('Not enough credits. Buy more to continue.', 'err');
+      openModal();
+      btn.disabled = false;
+      btn.innerHTML = '✦ Generate document';
+      return;
+    }
+
+    if (!res.ok) throw new Error('Server error');
+
+    body.innerHTML = '<span class="cursor"></span>';
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = dec.decode(value);
+      for (const line of chunk.split('\n')) {
+        if (!line.startsWith('data:')) continue;
+        try {
+          const d = JSON.parse(line.slice(5).trim());
+          if (d.text) {
+            generatedText += d.text;
+            body.innerHTML = esc(generatedText) + '<span class="cursor"></span>';
+            body.parentElement.scrollTop = body.scrollHeight;
+          }
+          if (d.done) {
+            credits = d.credits;
+            updateCreditsUI();
+          }
+          if (d.error) { toast(d.error, 'err'); }
+        } catch {}
+      }
+    }
+
+    body.textContent = generatedText;
+    document.getElementById('outTitle').textContent = docCfg[currentDoc].title + ' — ready';
+    toast('Document generated ✓', 'ok');
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  } catch (e) {
+    body.innerHTML = '<span style="color:var(--red)">Something went wrong. Please try again.</span>';
+    toast('Generation failed. Try again.', 'err');
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '✦ Generate document';
+}
+
+function esc(t) { return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── Copy / Download ────────────────────────────────────────────────────────
+function copyDoc() {
+  if (!generatedText) return;
+  navigator.clipboard.writeText(generatedText).then(() => toast('Copied ✓', 'ok'));
+}
+
+function downloadDoc() {
+  if (!generatedText) return;
+  const blob = new Blob([generatedText], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = currentDoc + '-docforge.txt';
+  a.click();
+  toast('Downloaded ✓', 'ok');
+}
+
+// ── Payment ────────────────────────────────────────────────────────────────
+function openModal() { document.getElementById('payOverlay').classList.add('visible'); }
+function closeModal() { document.getElementById('payOverlay').classList.remove('visible'); }
+
+function selPack(el, pack) {
+  document.querySelectorAll('.pack').forEach(p => p.classList.remove('sel'));
+  el.classList.add('sel');
+  currentPack = pack;
+  document.getElementById('payBtn').textContent = `Pay ${packPrices[pack]} via Stripe →`;
+}
+
+async function checkout() {
+  document.getElementById('payBtn').textContent = 'Redirecting...';
+  try {
+    const res = await fetch('/api/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pack: currentPack, sessionId }),
+    });
+    const data = await res.json();
+    if (data.url) { window.location.href = data.url; }
+    else { toast('Payment setup failed. Try again.', 'err'); }
+  } catch {
+    toast('Payment setup failed. Try again.', 'err');
+  }
+  document.getElementById('payBtn').textContent = `Pay ${packPrices[currentPack]} via Stripe →`;
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+function toast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast ' + (type || '') + ' show';
+  setTimeout(() => el.classList.remove('show'), 3200);
+}
+
+// ── Close modal on backdrop click ─────────────────────────────────────────
+document.getElementById('payOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('payOverlay')) closeModal();
+});
+</script>
+</body>
+</html>
