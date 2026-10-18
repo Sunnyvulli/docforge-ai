@@ -355,10 +355,13 @@ textarea{resize:vertical;min-height:100px;line-height:1.6}
 
 <div class="toast" id="toast"></div>
 
+<script src="/sse.js"></script>
 <script>
 // ── State ──────────────────────────────────────────────────────────────────
 let sessionId = localStorage.getItem('docforge_session') || null;
 let credits = 0;
+let paymentsEnabled = false;
+let generationEnabled = false;
 let currentDoc = 'resume';
 let currentTone = 'Professional';
 let currentLen = 'Standard (1-2 pages)';
@@ -368,12 +371,12 @@ let generatedText = '';
 const packPrices = { starter: '$9', value: '$19', pro: '$39' };
 
 const docCfg = {
-  'resume':          { title:'Resume / CV',              desc:"Tell us about yourself and your experience",        icon:'📄', cost:'$3' },
-  'cover-letter':    { title:'Cover letter',             desc:"For the role you're applying to",                  icon:'✉️', cost:'$2' },
-  'contract':        { title:'Contract / Agreement',     desc:"Legally structured service or business agreement", icon:'📋', cost:'$5' },
-  'invoice':         { title:'Invoice',                  desc:"Professional billing document",                    icon:'🧾', cost:'$2' },
-  'sop':             { title:'Standard Operating Procedure', desc:"Step-by-step process documentation",           icon:'📌', cost:'$4' },
-  'business-letter': { title:'Business letter',          desc:"Formal professional correspondence",               icon:'📝', cost:'$2' },
+  'resume':          { title:'Resume / CV',              desc:"Tell us about yourself and your experience",        icon:'📄', cost:'3 credits' },
+  'cover-letter':    { title:'Cover letter',             desc:"For the role you're applying to",                  icon:'✉️', cost:'2 credits' },
+  'contract':        { title:'Contract / Agreement',     desc:"Legally structured service or business agreement", icon:'📋', cost:'5 credits' },
+  'invoice':         { title:'Invoice',                  desc:"Professional billing document",                    icon:'🧾', cost:'2 credits' },
+  'sop':             { title:'Standard Operating Procedure', desc:"Step-by-step process documentation",           icon:'📌', cost:'4 credits' },
+  'business-letter': { title:'Business letter',          desc:"Formal professional correspondence",               icon:'📝', cost:'2 credits' },
 };
 
 // ── Session init ───────────────────────────────────────────────────────────
@@ -382,7 +385,11 @@ async function initSession() {
     const headers = { 'Content-Type': 'application/json' };
     if (sessionId) headers['x-session-id'] = sessionId;
     const res = await fetch('/api/session', { headers });
+    if (res.status === 401) { localStorage.removeItem('docforge_session'); sessionId = null; return initSession(); }
+    if (!res.ok) throw new Error('Session unavailable');
     const data = await res.json();
+    paymentsEnabled = data.paymentsEnabled;
+    generationEnabled = data.generationEnabled;
     sessionId = data.sessionId;
     credits = data.credits;
     localStorage.setItem('docforge_session', sessionId);
@@ -395,8 +402,7 @@ async function initSession() {
 // Check for successful payment return
 const params = new URLSearchParams(window.location.search);
 if (params.get('payment') === 'success') {
-  const newCredits = parseInt(params.get('credits') || '0');
-  toast(`✓ Payment successful! ${newCredits} credits added.`, 'ok');
+  toast('Checkout returned. Credit balance will update after server confirmation.', 'ok');
   window.history.replaceState({}, '', '/');
   // Re-init session to get updated credits
   setTimeout(initSession, 500);
@@ -477,6 +483,7 @@ function getRequiredField() {
 
 // ── Generate ───────────────────────────────────────────────────────────────
 async function generate() {
+  if (!generationEnabled) { toast('Document generation is not available yet.', 'err'); return; }
   if (!getRequiredField()) { toast('Please fill in the required fields.', 'err'); return; }
   if (credits <= 0) { openModal(); return; }
 
@@ -517,27 +524,24 @@ async function generate() {
     const reader = res.body.getReader();
     const dec = new TextDecoder();
 
+    let completed = false;
+    const parser = createSSEParser(d => {
+      if (d.error) throw new Error(d.error);
+      if (d.text) {
+        generatedText += d.text;
+        body.textContent = generatedText;
+        body.parentElement.scrollTop = body.scrollHeight;
+      }
+      if (d.done) { completed = true; credits = d.credits; updateCreditsUI(); }
+    });
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-      const chunk = dec.decode(value);
-      for (const line of chunk.split('\n')) {
-        if (!line.startsWith('data:')) continue;
-        try {
-          const d = JSON.parse(line.slice(5).trim());
-          if (d.text) {
-            generatedText += d.text;
-            body.innerHTML = esc(generatedText) + '<span class="cursor"></span>';
-            body.parentElement.scrollTop = body.scrollHeight;
-          }
-          if (d.done) {
-            credits = d.credits;
-            updateCreditsUI();
-          }
-          if (d.error) { toast(d.error, 'err'); }
-        } catch {}
-      }
+      parser.push(dec.decode(value, { stream: true }));
     }
+    parser.push(dec.decode());
+    parser.finish();
+    if (!completed) throw new Error('Generation ended before completion');
 
     body.textContent = generatedText;
     document.getElementById('outTitle').textContent = docCfg[currentDoc].title + ' — ready';
@@ -545,8 +549,9 @@ async function generate() {
     panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
   } catch (e) {
-    body.innerHTML = '<span style="color:var(--red)">Something went wrong. Please try again.</span>';
-    toast('Generation failed. Try again.', 'err');
+    body.textContent = e.message || 'Generation failed.';
+    toast('Generation did not complete. Check your credit balance before retrying.', 'err');
+    await initSession();
   }
 
   btn.disabled = false;
@@ -572,7 +577,7 @@ function downloadDoc() {
 }
 
 // ── Payment ────────────────────────────────────────────────────────────────
-function openModal() { document.getElementById('payOverlay').classList.add('visible'); }
+function openModal() { if (!paymentsEnabled) { toast('Purchases are unavailable in this preview.', 'err'); return; } document.getElementById('payOverlay').classList.add('visible'); }
 function closeModal() { document.getElementById('payOverlay').classList.remove('visible'); }
 
 function selPack(el, pack) {
@@ -583,11 +588,12 @@ function selPack(el, pack) {
 }
 
 async function checkout() {
+  if (!paymentsEnabled) { toast('Purchases are unavailable in this preview.', 'err'); return; }
   document.getElementById('payBtn').textContent = 'Redirecting...';
   try {
     const res = await fetch('/api/checkout', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-session-id': sessionId },
       body: JSON.stringify({ pack: currentPack, sessionId }),
     });
     const data = await res.json();
